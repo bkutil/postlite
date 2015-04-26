@@ -37,6 +37,10 @@ domains and aliases and creating the DB schema.
 
 Sqlite3 command line client needs to be installed.
 
+### Dovecot
+
+`doveadm pw` is used to hash/prompt for user passwords.
+
 ### Postfix maps
 
 Postfix needs to be configured to use following virtual maps via `main.cf`:
@@ -58,7 +62,13 @@ sqlite-virtual-mailbox-maps.cf
     dbpath = /etc/postfix/postfix.db
     query = SELECT 1 FROM virtual_users WHERE email='%s'
 
-### Dovecot
+### Dovecot SQL conf
 
-`doveadm pw` is used to hash/prompt for user passwords.
+Dovecot needs to be configured to use sqlite as it's backend and use this password query:
 
+    driver = sqlite
+    connect = /etc/postfix/postfix.db
+    default_pass_scheme = SHA512-CRYPT
+    password_query = \
+      SELECT email as user, password \
+        FROM virtual_users WHERE email = '%u'
