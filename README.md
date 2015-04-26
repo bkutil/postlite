@@ -22,22 +22,22 @@ Sqlite3 command line client needs to be installed.
 Postfix needs to be configured to use following virtual maps via `main.cf`:
 
 sqlite-virtual-alias-maps.cf
-``
-dbpath = /etc/postfix/postfix.db
-query = SELECT destination FROM virtual_aliases WHERE source='%s'
-``
+
+    dbpath = /etc/postfix/postfix.db
+    query = SELECT destination FROM virtual_aliases WHERE source='%s'
+
 
 sqlite-virtual-mailbox-domains.cf
-``
-dbpath = /etc/postfix/postfix.db
-query = SELECT 1 FROM virtual_domains WHERE name='%s'
-``
+
+    dbpath = /etc/postfix/postfix.db
+    query = SELECT 1 FROM virtual_domains WHERE name='%s'
+
 
 sqlite-virtual-mailbox-maps.cf
-``
-dbpath = /etc/postfix/postfix.db
-query = SELECT 1 FROM virtual_users WHERE email='%s'
-``
+
+    dbpath = /etc/postfix/postfix.db
+    query = SELECT 1 FROM virtual_users WHERE email='%s'
+
 ### Dovecot
 
 `doveadm pw` is used to hash/prompt for user passwords.
