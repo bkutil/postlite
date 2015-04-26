@@ -66,6 +66,8 @@ sqlite-virtual-mailbox-maps.cf
 
 Dovecot needs to be configured to use sqlite as it's backend and use this password query:
 
+dovecot-sql.conf.ext
+
     driver = sqlite
     connect = /etc/postfix/postfix.db
     default_pass_scheme = SHA512-CRYPT
