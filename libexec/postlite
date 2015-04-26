@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -e
+
+resolve_link() {
+  $(type -p greadlink readlink | head -1) "$1"
+}
+
+abs_dirname() {
+  local cwd="$(pwd)"
+  local path="$1"
+
+  while [ -n "$path" ]; do
+    cd "${path%/*}"
+    local name="${path##*/}"
+    path="$(resolve_link "$name" || true)"
+  done
+
+  pwd
+  cd "$cwd"
+}
+
+libexec_path="$(abs_dirname "$0")"
+export _POSTLITE_ROOT="$(abs_dirname "$libexec_path")"
+export PATH="${libexec_path}:$PATH"
+
+POSTLITE_CONF="$HOME/.postliterc"
+
+if [ ! -f "$POSTLITE_CONF" ]; then
+	echo "Please create a postliterc config file $POSTLITE_CONF and specify a path to your database in POSTLITE_DB variable."
+	exit 1
+fi
+
+. "$HOME/.postliterc"
+
+command="$1"
+case "$command" in
+"" | "-h" | "--help" )
+  exec postlite-help
+  ;;
+* )
+  command_path="$(command -v "postlite-$command" || true)"
+  if [ ! -x "$command_path" ]; then
+    echo "postlite: no such command \`$command'" >&2
+    exit 1
+  fi
+
+  shift
+  exec "$command_path" "$@"
+  ;;
+esac

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Usage: postlite user add|rm|list <username@example.org> (password)
+# Summary: Manipulates virtual users
+# Help: Adds/removes a virtual user and sets his password, or lists all users currently configured.
+
+set -e
+
+. "$HOME/.postliterc"
+
+OP="$1"
+USER="$2"
+PASS="$3"
+
+if [ ! -f "$POSTLITE_DB" ]; then
+  echo "Cannot find postlite db at "$POSTLITE_DB", please run 'postlite db init' to create it."
+  exit 1
+fi
+
+if [ -z "$OP" ]; then
+	echo "Usage: postlite user add|rm|list <username@example.org> (password)."
+	exit 1
+fi
+
+if [ -z "$USER" ]; then
+	case "$OP" in
+		add|rm)
+			echo "Usage: postlite user $OP <username@example.org> (password)."
+			exit 1
+	esac
+fi
+
+case "$OP" in
+	list)
+		sqlite3 "$POSTLITE_DB" "SELECT \`email\` FROM virtual_users;"
+	;;
+	add|rm)
+		if [ "$OP" == "add" ]; then
+			EXISTS=$(sqlite3 "$POSTLITE_DB" "SELECT 1 FROM virtual_users WHERE \`email\` = '$USER';")
+			if [ ! -z "$EXISTS" ]; then
+				echo "User $USER already exists.";
+				exit 0;
+			fi
+
+			DOMAIN=$(echo $USER | cut -d'@' -f 2)
+
+			if [ -z "$DOMAIN" ]; then
+				echo "User has to be in username@example.org format."
+				exit 1
+			fi
+
+			DOMAIN_ID=$(sqlite3 "$POSTLITE_DB" "SELECT \`id\` FROM virtual_domains WHERE \`name\` = '$DOMAIN';")
+
+			if [ -z "$DOMAIN_ID" ]; then
+				echo "No virtual domain entry found for $DOMAIN, please run 'postlite domain add $DOMAIN' to add it."
+				exit 1
+			fi
+
+			if [ -z "$PASS" ]; then
+				DIGEST=$(doveadm pw -s SHA512-CRYPT)
+			else
+				DIGEST=$(echo -en "$PASS\n$PASS" | doveadm pw -s SHA512-CRYPT)
+			fi
+
+			sqlite3 "$POSTLITE_DB" "INSERT INTO virtual_users (\`domain_id\`, \`email\`, \`password\`) VALUES ('$DOMAIN_ID', '$USER', '$DIGEST');"
+		fi
+
+		if [ "$OP" == "rm" ]; then
+			EXISTS=$(sqlite3 "$POSTLITE_DB" "SELECT 1 FROM virtual_users WHERE \`email\` = '$USER';")
+			if [ -z "$EXISTS" ]; then
+				echo "User $USER does not exist.";
+				exit 0;
+			fi
+			sqlite3 "$POSTLITE_DB" "DELETE FROM virtual_users WHERE \`email\` = '$USER';"
+		fi
+	;;
+	*)
+		echo "Usage: postlite user add|rm|list <username@example.org> (password)."
+		exit 1
+	;;
+esac

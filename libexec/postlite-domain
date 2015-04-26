@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Usage: postlite domain add|rm|list <domain>
+# Summary: Manipulates virtual domains
+# Help: Adds/removes a virtual domain, or lists all domains currently configured.
+
+set -e
+
+. "$HOME/.postliterc"
+
+OP="$1"
+DOMAIN="$2"
+
+if [ ! -f "$POSTLITE_DB" ]; then
+  echo "Cannot find postlite db at "$POSTLITE_DB", please run 'postlite db init' to create it."
+  exit 1
+fi
+
+if [ -z "$OP" ]; then
+	echo "Usage: postlite domain add|rm|list <domain>."
+	exit 1
+fi
+
+if [ -z "$DOMAIN" ]; then
+	case "$OP" in
+		add|rm)
+			echo "Usage: postlite domain $OP <domain name>."
+			exit 1
+	esac
+fi
+
+case "$OP" in
+	list)
+		sqlite3 "$POSTLITE_DB" "SELECT \`name\` FROM virtual_domains;"
+	;;
+	add)
+		EXISTS=$(sqlite3 "$POSTLITE_DB" "SELECT 1 FROM virtual_domains WHERE \`name\` = '$DOMAIN';")
+		if [ ! -z "$EXISTS" ]; then
+			echo "Domain $DOMAIN already exists.";
+			exit 0;
+		fi
+		sqlite3 "$POSTLITE_DB" "INSERT INTO virtual_domains (\`name\`) VALUES ('$DOMAIN');"
+	;;
+	rm)
+		EXISTS=$(sqlite3 "$POSTLITE_DB" "SELECT 1 FROM virtual_domains WHERE \`name\` = '$DOMAIN';")
+		if [ -z "$EXISTS" ]; then
+			echo "Domain $DOMAIN does not exist.";
+			exit 0;
+		fi
+		sqlite3 "$POSTLITE_DB" "DELETE FROM virtual_domains WHERE \`name\` = '$DOMAIN';"
+	;;
+	*)
+		echo "Usage: postlite domain add|rm|list <domain name>."
+		exit 1
+	;;
+esac

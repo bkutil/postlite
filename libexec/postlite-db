@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Usage: postlite db init [force]
+# Summary: Initializes the postlite database
+# Help: Creates the postlite DB, use `postlite db init force` to overwrite.
+
+set -e
+
+. "$HOME/.postliterc"
+
+OP="$1"
+FORCE="$2"
+
+if [ -z "$OP" ] || [ "$OP" != "init" ]; then
+	echo "Usage: postlite db init [force]."
+	exit 1
+fi
+
+if [ -z "$FORCE" ] && [ -f "$POSTLITE_DB" ]; then
+	echo "Database $POSTLITE_DB exists, run postlite db init force to re-initialize it."
+	exit 1
+fi
+
+rm -f "$POSTLITE_DB"
+
+sqlite3 "$POSTLITE_DB" 'CREATE TABLE `virtual_domains` (`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, `name` varchar(50) NOT NULL);'
+
+sqlite3 "$POSTLITE_DB" 'CREATE TABLE `virtual_users` (`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, `domain_id` INTEGER NOT NULL, `password` VARCHAR(32) NOT NULL, `email` VARCHAR(100) NOT NULL, CONSTRAINT unique_email UNIQUE (`email`), FOREIGN KEY (`domain_id`) REFERENCES virtual_domains(id) ON DELETE CASCADE);'
+
+sqlite3 "$POSTLITE_DB" 'CREATE TABLE `virtual_aliases` (`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, `domain_id` INTEGER NOT NULL, `source` VARCHAR(100) NOT NULL, `destination` VARCHAR(100) NOT NULL, FOREIGN KEY (`domain_id`) REFERENCES virtual_domains(id) ON DELETE CASCADE);'

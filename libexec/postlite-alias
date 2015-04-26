@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Usage: postlite alias add|rm|list <alias@example.org> <username@example.org>
+# Summary: Manipulates virtual aliases
+# Help: Adds/removes a virtual alias, or lists all aliases currently configured.
+
+set -e
+
+. "$HOME/.postliterc"
+
+OP="$1"
+SRC="$2"
+DST="$3"
+
+if [ ! -f "$POSTLITE_DB" ]; then
+  echo "Cannot find postlite db at "$POSTLITE_DB", please run 'postlite db init' to create it."
+  exit 1
+fi
+
+if [ -z "$OP" ]; then
+	echo "Usage: postlite alias add|rm|list <alias@example.org> <username@example.org>."
+	exit 1
+fi
+
+if [ -z "$SRC" ] || [ -z "$DST" ]; then
+	case "$OP" in
+		add|rm)
+			echo "Usage: postlite alias $OP <alias@example.org> <username@example.org>."
+			exit 1
+	esac
+fi
+
+case "$OP" in
+	list)
+		sqlite3 "$POSTLITE_DB" "SELECT \`source\`, \`destination\` FROM virtual_aliases;"
+	;;
+	add|rm)
+		if [ "$OP" == "add" ]; then
+			EXISTS=$(sqlite3 "$POSTLITE_DB" "SELECT 1 FROM virtual_aliases WHERE \`source\` = '$SRC' AND \`destination\` = '$DST';")
+			if [ ! -z "$EXISTS" ]; then
+				echo "Alias $SRC|$DST already exists.";
+				exit 0;
+			fi
+
+			DOMAIN=$(echo $SRC | cut -d'@' -f 2)
+
+			if [ -z "$DOMAIN" ]; then
+				echo "Alias source has to be in alias@example.org format."
+				exit 1
+			fi
+
+			DOMAIN_ID=$(sqlite3 "$POSTLITE_DB" "SELECT \`id\` FROM virtual_domains WHERE \`name\` = '$DOMAIN';")
+
+			if [ -z "$DOMAIN_ID" ]; then
+				echo "No virtual domain entry found for $DOMAIN, please run 'postlite domain add $DOMAIN' to add it."
+				exit 1
+			fi
+
+			DST_ID=$(sqlite3 "$POSTLITE_DB" "SELECT \`id\` FROM virtual_users WHERE \`email\` = '$DST';")
+
+			if [ -z "$DST_ID" ]; then
+				echo "No user entry found for $DST, please run 'postlite user add $DST' to add it."
+				exit 1
+			fi
+
+			sqlite3 "$POSTLITE_DB" "INSERT INTO virtual_aliases (\`domain_id\`, \`source\`, \`destination\`) VALUES ('$DOMAIN_ID', '$SRC', '$DST');"
+		fi
+
+		if [ "$OP" == "rm" ]; then
+			EXISTS=$(sqlite3 "$POSTLITE_DB" "SELECT 1 FROM virtual_aliases WHERE \`source\` = '$SRC' AND \`destination\` = '$DST';")
+
+			if [ -z "$EXISTS" ]; then
+				echo "Alias $SRC|$DST does not exist.";
+				exit 0;
+			fi
+
+			sqlite3 "$POSTLITE_DB" "DELETE FROM virtual_aliases WHERE \`source\` = '$SRC' AND \`destination\` = '$DST';"
+		fi
+	;;
+	*)
+		echo "Usage: postlite user add|rm|list <alias@example.org> <username@example.org>."
+		exit 1
+	;;
+esac
