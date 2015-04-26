@@ -5,11 +5,25 @@ domains and aliases and creating the DB schema.
 
 ## Install
 
-  1. Clone the repository
-  1. Run `./bin/postlite init >> ~/.bash_profile`
-  1. Restart the shell
-  1. Create `~/.postliterc` and add `POSTLITE_DB=/etc/postfix/postfix.db`
-  1. Run postlite db init to create the database and schema
+1. Clone the repository
+
+    $ git clone https://github.com/bkutil/postlite.git ~/.postlite
+
+2. Make sure `~/.postlite/bin` is in your `$PATH`:
+
+    $ echo 'export PATH="$HOME/.postlite/bin:$PATH"' >> ~/.bash_profile
+
+3. Add `postlite init` to your shell to enable autocompletion.
+
+    $ echo 'eval "$(postlite init -)"' >> ~/.bash_profile
+
+4. Restart the shell
+
+5. Create `~/.postliterc` and configure path to your Postfix sqlite DB:
+
+    `POSTLITE_DB=/etc/postfix/postfix.db`
+
+6. Run `postlite db init` to create the database and schema
 
 ## Pre-requisites
 
