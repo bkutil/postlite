@@ -9,7 +9,7 @@ domains and aliases and creating the DB schema.
 
     $ git clone https://github.com/bkutil/postlite.git ~/.postlite
 
-2. Make sure `~/.postlite/bin` is in your `$PATH`:
+2. Make sure `~/.postlite/bin` is in your `$PATH` (use `.bashrc` on Debian/Ubuntu and `.zshrc` for ZSH):
 
     $ echo 'export PATH="$HOME/.postlite/bin:$PATH"' >> ~/.bash_profile
 
