@@ -7,15 +7,21 @@ domains and aliases and creating the DB schema.
 
 1. Clone the repository
 
+    ~~~ sh
     $ git clone https://github.com/bkutil/postlite.git ~/.postlite
+    ~~~
 
 2. Make sure `~/.postlite/bin` is in your `$PATH` (use `.bashrc` on Debian/Ubuntu and `.zshrc` for ZSH):
 
+    ~~~ sh
     $ echo 'export PATH="$HOME/.postlite/bin:$PATH"' >> ~/.bash_profile
+    ~~~
 
 3. Add `postlite init` to your shell to enable autocompletion.
 
+    ~~~ sh
     $ echo 'eval "$(postlite init -)"' >> ~/.bash_profile
+    ~~~
 
 4. Restart the shell
 
